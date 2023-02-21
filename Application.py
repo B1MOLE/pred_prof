@@ -5,11 +5,14 @@ import pandas as pd
 import os
 import Model
 
+
 class Application:
     def __init__(self, master):
         self.master = master
         self.master.title("URL Classifier")             # Название окна
         self.master.configure(background='#F0F0F0')     # Цвет фона
+
+        self.model = Model.Model("model", "vect")
 
         # Создание меню
         menu_bar = Menu(self.master)
@@ -72,7 +75,7 @@ class Application:
 
     def classify_url(self):
         url = self.url_entry.get()
-        category = Model.Model().execute_model(url)
+        category = self.model.execute_model(url)
 
         # Сохранение URL и категорию в файл CSV
         df = pd.DataFrame({'URL': [url], 'Category': [category]})
@@ -91,7 +94,7 @@ class Application:
             data = []
             for row in classified_urls.itertuples(index=False):
                 url = row[0]
-                category = Model.Model().execute_model(url)
+                category = self.model.execute_model(url)
                 data.append({'URL': url, 'Category': category})
 
             # Сохранение URL и категорию в файл CSV
