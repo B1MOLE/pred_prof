@@ -15,7 +15,7 @@ class Parser:
         content = requests.get(website_url, timeout=20).content
 
         # lxml is apparently faster than other settings.
-        soup = BeautifulSoup(content)
+        soup = BeautifulSoup(content, features="html.parser")
         result = {
             "website_url": website_url,
             "website_name": self.get_website_name(website_url),
@@ -33,23 +33,33 @@ class Parser:
         '''
         Возвращает название страницы"
         '''
-        return "".join(urlparse(website_url).netloc.split(".")[-2])
-
+        try:
+            return "".join(urlparse(website_url).netloc.split(".")[-2])
+        except:
+            return ""
     def get_html_title_tag(self, soup):
         '''Возвращает текстовое содержимое тега <title> с веб-страницы'''
-        return '. '.join(soup.title.contents)
+        try:
+            return '. '.join(soup.title.contents)
+        except:
+            return ""
 
     def get_html_meta_tags(self, soup):
         '''Возвращает текстовое содержимое тегов <meta>, связанных с ключевыми словами и описанием с веб-страницы.'''
-        tags = soup.find_all(lambda tag: (tag.name == "meta") & (tag.has_attr('name') & (tag.has_attr('content'))))
-        content = [str(tag["content"]) for tag in tags if tag["name"] in ['keywords', 'description']]
-        return ' '.join(content)
-
+        try:
+            tags = soup.find_all(lambda tag: (tag.name == "meta") & (tag.has_attr('name') & (tag.has_attr('content'))))
+            content = [str(tag["content"]) for tag in tags if tag["name"] in ['keywords', 'description']]
+            return ' '.join(content)
+        except:
+            return ""
     def get_html_heading_tags(self, soup):
         '''возвращает текстовое содержимое тегов заголовков. Предполагается, что заголовки могут содержать относительно важный текст.'''
-        tags = soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6"])
-        content = [" ".join(tag.stripped_strings) for tag in tags]
-        return ' '.join(content)
+        try:
+            tags = soup.find_all(["h1", "h2", "h3", "h4", "h5", "h6"])
+            content = [" ".join(tag.stripped_strings) for tag in tags]
+            return ' '.join(content)
+        except:
+            return ""
 
     def get_text_content(self, soup):
         '''возвращает текстовое содержимое всей страницы с некоторыми исключениями для тегов'''
