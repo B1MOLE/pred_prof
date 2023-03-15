@@ -132,7 +132,7 @@ class Classified_urls(tk.Toplevel):
             os.remove('classified_urls.csv')
             self.table.configure(text="")
         except OSError:
-            tk.messagebox.showerror(title="Error", message="An error occurred while attempting to clear the history.")
+            tk.messagebox.showerror(title="Error", message="Файл и так пустой.")
 
     def back(self):
         self.destroy()
