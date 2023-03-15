@@ -25,22 +25,16 @@ class Model:
         Создание модели
         """
         dataset = pd.read_csv('website_classification.csv')
-        df = dataset[['website_url', 'cleaned_website_text', 'Category']].copy()
-        df['category_id'] = df['Category'].factorize()[0]
+        dataset['category_id'] = dataset['Category'].factorize()[0]
 
-        tfidf = TfidfVectorizer(sublinear_tf=True, min_df=5,
-                             ngram_range=(1, 2),
-                             stop_words='english')
+        tfidf = TfidfVectorizer(sublinear_tf=True, min_df=5,ngram_range=(1, 2),stop_words='english')
 
         # We transform each cleaned_text into a vector
-        features = tfidf.fit_transform(df.cleaned_website_text).toarray()
-
-        labels = df.category_id
-
-        X = df['cleaned_website_text']  # Collection of text
-
+        features = tfidf.fit_transform(dataset.cleaned_website_text).toarray()
+        labels = dataset.category_id
+        X = dataset['cleaned_website_text']  # Collection of text
         X_train, X_test, y_train, y_test, indices_train, indices_test = train_test_split(features,labels,
-                                                                                      df.index, test_size=0.25,
+                                                                                      dataset.index, test_size=0.25,
                                                                                       random_state=1)
         model = LinearSVC()
         model.fit(X_train, y_train)
@@ -50,9 +44,7 @@ class Model:
 
         model.fit(features, labels)
 
-        X_train, X_test, y_train, y_test = train_test_split(X, df['category_id'], test_size=0.25, random_state=0)
-
-        tfidf = TfidfVectorizer(sublinear_tf=True, min_df=5, ngram_range=(1, 2), stop_words='english')
+        X_train, X_test, y_train, y_test = train_test_split(X, dataset['category_id'], test_size=0.25, random_state=0)
 
         fitted_vectorizer = tfidf.fit(X_train)
         tfidf_vectorizer_vectors = fitted_vectorizer.transform(X_train)
@@ -63,10 +55,11 @@ class Model:
         pickle.dump(m1, open(self.model_filename, 'wb'))
         pickle.dump(fitted_vectorizer, open(self.vector_filename, 'wb'))
 
-    def execute_model(self, website):
+    def predict_class(self, website):
         """
-        Использование модели для классфикации ссылок
+        Использование модели для классификации ссылок и возврат предсказанного класса
         """
+        # Использование модели для классификации ссылок
         model = pickle.load(open(self.model_filename, 'rb'))
         fitted_vector = pickle.load(open(self.vector_filename, 'rb'))
 
@@ -75,19 +68,54 @@ class Model:
         web = dict(parser.visit_url(website))
         text = (parser.clean_text(web['website_text']))
         t = fitted_vector.transform([text])
-        data = pd.DataFrame(model.predict_proba(t) * 100,
-                            columns=['Travel', 'Social Networking and Messaging', 'News', 'Streaming Services',
-                                     'Sports', 'Photography', 'Law and Government', 'Health and Fitness', 'Games',
-                                     'E-Commerce', 'Food', 'Education', 'Computers and Technology',
-                                     'Business/Corporate'])
-        data = data.T
-        data.columns = ['Probability']
-        data.index.name = 'Category'
-        a = data.sort_values(['Probability'], ascending=False)
-        a['Probability'] = a['Probability'].apply(lambda x: round(x, 2))
+        # Получаем вероятности для каждого класса
+        proba = model.predict_proba(t)[0]
+        # Составляем DataFrame с вероятностями для каждого класса
+        data = pd.DataFrame({
+            'Category': ['Путешествия', 'Социальные сети', 'Новости', 'Стриминговые сервисы',
+                         'Спорт', 'Фотографии', 'Закон и правительство', 'Здоровье и фитнесс', 'Игры',
+                         'Электронная коммерция', 'Еда', 'Образование', 'Компьютер и технологии',
+                         'Бизнес'],
+            'Probability': proba
+        })
+        # Сортируем по убыванию вероятности
+        data = data.sort_values(['Probability'], ascending=False)
+        # Округляем вероятности до 2 знаков после запятой
+        data['Probability'] = data['Probability'].apply(lambda x: round(x, 2))
 
-        # Update history with class prediction
-        class_pred = a.index[0]
+        # Обновляем историю с предсказанием класса и его точностью
+        class_pred = data.iloc[0]['Category']
 
         return class_pred
+
+    def predict_probability(self, website):
+        """
+        Использование модели для классификации ссылок и возврат вероятности предсказанного класса
+        """
+        # Использование модели для классификации ссылок
+        model = pickle.load(open(self.model_filename, 'rb'))
+        fitted_vector = pickle.load(open(self.vector_filename, 'rb'))
+
+        parser = Parser.Parser()
+
+        web = dict(parser.visit_url(website))
+        text = (parser.clean_text(web['website_text']))
+        t = fitted_vector.transform([text])
+        # Получаем вероятности для каждого класса
+        proba = model.predict_proba(t)[0]
+        # Составляем DataFrame с вероятностями для каждого класса
+        data = pd.DataFrame({
+            'Category': ['Путешествия', 'Социальные сети', 'Новости', 'Стриминговые сервисы',
+                         'Спорт', 'Фотографии', 'Закон и правительство', 'Здоровье и фитнесс', 'Игры',
+                         'Электронная коммерция', 'Еда', 'Образование', 'Компьютер и технологии',
+                         'Бизнес'],
+            'Probability': proba})
+        # Сортируем по убыванию вероятности
+        data = data.sort_values(['Probability'], ascending=False)
+        # Округляем вероятности до 2 знаков после запятой
+        data['Probability'] = data['Probability'].apply(lambda x: round(x, 2))
+        # Обновляем историю с предсказанием класса и его точностью
+        class_prob = data.iloc[0]['Probability']
+
+        return class_prob
 
