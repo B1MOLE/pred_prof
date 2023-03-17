@@ -81,7 +81,9 @@ class Parser:
         '''
         Очистка документа. Удаление местоимения, стоп-слов, лемматизировать слова и сделать их строчными
         '''
-        nlp = sp.load("en_core_web_sm")
+        nlp = sp.load("en")
+        # output_dir = r"C:\Users\Alexey\PycharmProjects\ml_prof\dist\App"
+        # nlp.to_disk(output_dir)
         doc = nlp(doc)
         tokens = []
         exclusion_list = ["nan"]
