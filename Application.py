@@ -179,6 +179,11 @@ class Classified_urls(tk.Toplevel):
 
 
 if __name__ == "__main__":
-     app = Main()
-     app.mainloop()
+    if os.path.exists("model") and os.path.exists("vect"):
+        app = Main()
+        app.mainloop()
+    else:
+        Model.Model("model", "vect").create_model()
+        app = Main()
+        app.mainloop()
 
