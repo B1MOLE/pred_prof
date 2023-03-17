@@ -119,3 +119,4 @@ class Model:
 
         return class_prob
 
+
